@@ -1,0 +1,37 @@
+# Core ML/DL frameworks
+torch>=1.9.0
+torchvision>=0.10.0
+timm>=0.9.0
+pytorch-lightning>=2.0.0
+
+# Image processing and computer vision
+opencv-python>=4.5.0
+albumentations>=1.3.0
+Pillow>=8.0.0
+
+# Data handling and scientific computing
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+scipy>=1.7.0
+
+# Visualization and plotting
+matplotlib>=3.3.0
+seaborn>=0.11.0
+
+# Medical image processing (optional, for advanced features)
+# monai>=1.0.0
+# openslide-python>=1.2.0
+
+# Utilities
+tqdm>=4.62.0
+PyYAML>=5.4.0
+tensorboard>=2.7.0
+
+# Development and testing (optional)
+# pytest>=6.0.0
+# black>=21.0.0
+# flake8>=3.9.0
+
+# For distributed training (optional)
+# accelerate>=0.20.0
