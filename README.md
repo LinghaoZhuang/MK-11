@@ -225,20 +225,6 @@ MK-11-CV5/              # 5-fold cross-validation splits
 └── fold_4/
 ```
 
-## 🎯 Citation
-
-If you use the MK-11 dataset or this codebase in your research, please cite:
-
-```bibtex
-@article{zhuang2025mk11,
-  title={MK-11: An open bone-marrow megakaryo-cyte dataset for automated morphologic studies},
-  author={Zhuang, Linghao and Zhang, Ying and Zhao, Xingyue and Jiang, Zhiping},
-  journal={Scientific Data},
-  year={2025},
-  note={Submitted}
-}
-```
-
 ## 🤝 Contributing
 
 We welcome contributions to improve the dataset and codebase:
