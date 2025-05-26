@@ -12,3 +12,11 @@
 [0526/163156:INFO:mailmaster_exe.cpp(86)] Last system shutdown time: 2025-05-26 07:45:51.398 UTC
 [0526/163156:INFO:mailmaster_exe.cpp(88)] System start time: 2025-05-26 07:46:02.000 UTC
 [0526/163156:INFO:main_dll_loader.cpp(114)] Version: 5.3.2.1015
+[0526/163159:INFO:mailmaster_exe.cpp(144)] Start ======================================================
+[0526/163159:INFO:mailmaster_exe.cpp(146)] Commandline: --type=renderer --no-sandbox --log-file="C:\Users\Zachary\AppData\Local\Netease\MailMaster\logs\web.log" --field-trial-handle=2452,3631122053797582443,5568529189468154991,131072 --enable-features=CastMediaRouteProvider --disable-features=WinUseBrowserSpellChecker --disable-gpu-compositing --lang=zh-CN --log-file="C:\Users\Zachary\AppData\Local\Netease\MailMaster\logs\web.log" --product-version="Chrome/87.0.4280.141 MailMasterPC/5.3.2.1015 (universal)" --disable-pdf-extension --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=4 --mojo-platform-channel-handle=4948 /prefetch:1
+[0526/163159:INFO:mailmaster_exe.cpp(80)] Environment: {"Admin":0,"CPULogicalCores":16,"CPUModel":"AMD Ryzen 7 5800H with Radeon Graphics         ","Mac":["9C2DCD373040"],"Memory":"4111/16236M","OSArchitecture":"x86_64","OSVersion":"10.0.26100"}
+[0526/163159:INFO:mailmaster_exe.cpp(81)] Exe.Path: C:\Program Files (x86)\Netease\MailMaster\Application\mailmaster.exe
+[0526/163159:INFO:mailmaster_exe.cpp(86)] Last system shutdown time: 2025-05-26 07:45:51.398 UTC
+[0526/163159:INFO:mailmaster_exe.cpp(88)] System start time: 2025-05-26 07:46:02.000 UTC
+[0526/163159:INFO:main_dll_loader.cpp(114)] Version: 5.3.2.1015
+[0526/163338:INFO:mailmaster_exe.cpp(207)] Process will exit with code: 0

@@ -3,7 +3,6 @@
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-1.9%2B-orange)](https://pytorch.org/)
-[![Dataset](https://img.shields.io/badge/Dataset-7%2C204%20images-green)](https://github.com/LinghaoZhuang/MK-11)
 
 > **Authors**: Linghao Zhuang¹, Ying Zhang²³⁴, Xingyue Zhao⁵, and Zhiping Jiang²³⁴  
 > ¹School of Software Engineering, Xinjiang University  
@@ -91,7 +90,7 @@ The framework supports various state-of-the-art architectures with baseline impl
   <tr>
     <td>ConvNeXt</td>
     <td><code>convnext_tiny</code>, <code>convnext_small</code>, <code>convnext_base</code></td>
-    <td>**79.23% ± 0.79% accuracy**</td>
+    <td>79.23% ± 0.79% accuracy</td>
   </tr>
   <tr>
     <td>VGG</td>
@@ -110,6 +109,7 @@ The framework supports various state-of-the-art architectures with baseline impl
   </tr>
 </table>
 
+
 ## 🛠️ Installation
 
 ```bash
@@ -119,9 +119,6 @@ cd MK-11
 
 # Install dependencies
 pip install -r requirements.txt
-
-# The dataset will be available on Figshare platform
-# DOI: 10.6084/m9.figshare.xxxxxx (to be updated upon publication)
 ```
 
 ## 🚀 Usage
@@ -176,13 +173,13 @@ python main_train.py \
 
 ### 5-Fold Cross-Validation Performance
 
-| Model | Accuracy (%) | F1-Score (%) | PR-AUC (%) | Parameters |
-|-------|-------------|-------------|------------|------------|
-| **ConvNeXt** | **79.23 ± 0.79** | **78.92 ± 0.90** | **83.89 ± 0.69** | ~28M |
-| ViT | 78.76 ± 0.69 | 78.64 ± 0.68 | 84.24 ± 0.90 | ~86M |
-| VGG-16 | 78.48 ± 0.48 | 78.36 ± 0.50 | 82.61 ± 0.55 | ~138M |
-| EfficientNet-B0 | 77.73 ± 0.41 | 77.39 ± 0.42 | 81.70 ± 0.87 | ~5M |
-| ResNet-50 | 76.18 ± 0.49 | 75.77 ± 0.59 | 79.75 ± 1.02 | ~25M |
+| Model | Accuracy (%) | F1-Score (%) | PR-AUC (%) |
+|-------|-------------|-------------|------------|
+| **ConvNeXt** | **79.23 ± 0.79** | **78.92 ± 0.90** | **83.89 ± 0.69** |
+| ViT | 78.76 ± 0.69 | 78.64 ± 0.68 | 84.24 ± 0.90 |
+| VGG-16 | 78.48 ± 0.48 | 78.36 ± 0.50 | 82.61 ± 0.55 |
+| EfficientNet-B0 | 77.73 ± 0.41 | 77.39 ± 0.42 | 81.70 ± 0.87 |
+| ResNet-50 | 76.18 ± 0.49 | 75.77 ± 0.59 | 79.75 ± 1.02 |
 
 *All results obtained using standardized preprocessing (224×224 pixels, ImageNet normalization) with comprehensive data augmentation including AutoAugment, Random Erasing, and Label Smoothing.*
 
@@ -278,9 +275,9 @@ This dataset addresses critical challenges in MDS diagnosis:
 ---
 
 **📧 Contact**: 
-- Linghao Zhuang: [linghao.zhuang@xju.edu.cn]
-- Ying Zhang: [zhangying_xy@csu.edu.cn]
-- Zhiping Jiang: [jiangzhiping@csu.edu.cn]
+
+- Linghao Zhuang: [20222501513@xju.edu.cn]
+- Zhiping Jiang: [jiangzhp@csu.edu.cn]
 
 **🏥 Institutional Affiliations**:
 - Xinjiang University, School of Software Engineering
