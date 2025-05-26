@@ -1,156 +1,242 @@
-## Masked Autoencoders: A PyTorch Implementation
+# Multi-architecture Image Classification Framework 🚀
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/11435359/146857310-f258c86c-fde6-48e8-9cee-badd2b21bd2c.png" width="480">
-</p>
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-1.9%2B-orange)](https://pytorch.org/)
 
+> This project is modified from the MaskedAutoEncoder (MAE) project and is licensed under CC BY-NC 4.0.
 
-This is a PyTorch/GPU re-implementation of the paper [Masked Autoencoders Are Scalable Vision Learners](https://arxiv.org/abs/2111.06377):
+This framework provides a unified interface for training various classification models, ranging from CNNs to Vision Transformers, on image datasets.
+
+## 📋 Table of Contents
+
+- [Supported Architectures](#-supported-architectures)
+- [Usage](#-usage)
+- [Important Parameters](#-important-parameters)
+- [Examples](#-examples)
+- [License Information](#-license-information)
+
+## 🏗️ Supported Architectures
+
+The framework currently supports the following model architectures:
+
+<table>
+  <tr>
+    <th>Model Family</th>
+    <th>Available Variants</th>
+  </tr>
+  <tr>
+    <td>Vision Transformers (ViT)</td>
+    <td>
+      <code>vit_base_patch16</code> - ViT-Base (768 dim, 12 layers, 12 heads)<br>
+      <code>vit_large_patch16</code> - ViT-Large (1024 dim, 24 layers, 16 heads)<br>
+      <code>vit_huge_patch14</code> - ViT-Huge (1280 dim, 32 layers, 16 heads)
+    </td>
+  </tr>
+  <tr>
+    <td>ResNet</td>
+    <td>
+      <code>resnet18</code>, <code>resnet34</code>, <code>resnet50</code>, <code>resnet101</code>, <code>resnet152</code>
+    </td>
+  </tr>
+  <tr>
+    <td>VGG</td>
+    <td>
+      <code>vgg16</code>, <code>vgg19</code>
+    </td>
+  </tr>
+  <tr>
+    <td>MobileNet</td>
+    <td>
+      <code>mobilenet_v3_small</code>, <code>mobilenet_v3_large</code>
+    </td>
+  </tr>
+  <tr>
+    <td>EfficientNet</td>
+    <td>
+      <code>efficientnet_b0</code>, <code>efficientnet_b1</code>, <code>efficientnet_b2</code>, <code>efficientnet_b3</code>
+    </td>
+  </tr>
+  <tr>
+    <td>RegNet</td>
+    <td>
+      <code>regnet_y_400mf</code>, <code>regnet_y_8gf</code>
+    </td>
+  </tr>
+  <tr>
+    <td>DenseNet</td>
+    <td>
+      <code>densenet121</code>, <code>densenet169</code>, <code>densenet201</code>
+    </td>
+  </tr>
+</table>
+
+## 🚀 Usage
+
+### Basic Usage
+
+```bash
+python main_train.py \
+  --model_type resnet \
+  --model resnet50 \
+  --batch_size 128 \
+  --epochs 100 \
+  --data_path /path/to/dataset \
+  --output_dir ./output_resnet50
 ```
-@Article{MaskedAutoencoders2021,
-  author  = {Kaiming He and Xinlei Chen and Saining Xie and Yanghao Li and Piotr Doll{\'a}r and Ross Girshick},
-  journal = {arXiv:2111.06377},
-  title   = {Masked Autoencoders Are Scalable Vision Learners},
-  year    = {2021},
-}
+
+### Using Pre-trained Models
+
+Use the `--pretrained` flag to initialize the model with pre-trained weights from timm:
+
+```bash
+python main_train.py \
+  --model_type resnet \
+  --model resnet50 \
+  --pretrained \
+  --batch_size 128 \
+  --epochs 50 \
+  --data_path /path/to/dataset \
+  --output_dir ./output_resnet50_pretrained
 ```
 
-* The original implementation was in TensorFlow+TPU. This re-implementation is in PyTorch+GPU.
+This loads ImageNet pre-trained weights for the backbone while initializing a new classification head for your specific task.
 
-* This repo is a modification on the [DeiT repo](https://github.com/facebookresearch/deit). Installation and preparation follow that repo.
+### Training with Multiple GPUs
 
-* This repo is based on [`timm==0.3.2`](https://github.com/rwightman/pytorch-image-models), for which a [fix](https://github.com/rwightman/pytorch-image-models/issues/420#issuecomment-776459842) is needed to work with PyTorch 1.8.1+.
+```bash
+python -m torch.distributed.launch --nproc_per_node=8 main_train.py \
+  --model_type vit \
+  --model vit_base_patch16 \
+  --batch_size 64 \
+  --epochs 100 \
+  --data_path /path/to/dataset \
+  --output_dir ./output_vit_base
+```
 
-### Catalog
+### Using Data Augmentation with Mixup and CutMix
 
-- [x] Visualization demo
-- [x] Pre-trained checkpoints + fine-tuning code
-- [x] Pre-training code
+```bash
+python main_train.py \
+  --model_type efficientnet \
+  --model efficientnet_b0 \
+  --batch_size 128 \
+  --epochs 100 \
+  --mixup 0.8 \
+  --cutmix 1.0 \
+  --data_path /path/to/dataset \
+  --output_dir ./output_efficientnet_b0
+```
 
-### Visualization demo
+### Resuming Training
 
-Run our interactive visualization demo using [Colab notebook](https://colab.research.google.com/github/facebookresearch/mae/blob/main/demo/mae_visualize.ipynb) (no GPU needed):
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/11435359/147859292-77341c70-2ed8-4703-b153-f505dcb6f2f8.png" width="600">
-</p>
+```bash
+python main_train.py \
+  --model_type resnet \
+  --model resnet50 \
+  --batch_size 128 \
+  --resume /path/to/checkpoint.pth \
+  --data_path /path/to/dataset \
+  --output_dir ./output_resnet50
+```
 
-### Fine-tuning with pre-trained checkpoints
+## ⚙️ Important Parameters
 
-The following table provides the pre-trained checkpoints used in the paper, converted from TF/TPU to PT/GPU:
-<table><tbody>
-<!-- START TABLE -->
-<!-- TABLE HEADER -->
-<th valign="bottom"></th>
-<th valign="bottom">ViT-Base</th>
-<th valign="bottom">ViT-Large</th>
-<th valign="bottom">ViT-Huge</th>
-<!-- TABLE BODY -->
-<tr><td align="left">pre-trained checkpoint</td>
-<td align="center"><a href="https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_base.pth">download</a></td>
-<td align="center"><a href="https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_large.pth">download</a></td>
-<td align="center"><a href="https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_huge.pth">download</a></td>
-</tr>
-<tr><td align="left">md5</td>
-<td align="center"><tt>8cad7c</tt></td>
-<td align="center"><tt>b8b06e</tt></td>
-<td align="center"><tt>9bdbb0</tt></td>
-</tr>
-</tbody></table>
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--model_type` | Type of model architecture | - |
+| `--model` | Specific model variant | - |
+| `--pretrained` | Use pre-trained weights from timm | `False` |
+| `--batch_size` | Batch size per GPU | - |
+| `--epochs` | Number of training epochs | - |
+| `--lr` | Learning rate | Computed from base LR |
+| `--blr` | Base learning rate | `1e-3` |
+| `--weight_decay` | Weight decay | `0.05` |
+| `--input_size` | Input image size | `224` |
+| `--mixup` | Mixup alpha | `0` (disabled) |
+| `--cutmix` | CutMix alpha | `0` (disabled) |
+| `--data_path` | Path to dataset | - |
+| `--output_dir` | Directory for saving outputs | - |
+| `--resume` | Resume from a checkpoint | - |
 
-The fine-tuning instruction is in [FINETUNE.md](FINETUNE.md).
+## 📊 Examples
 
-By fine-tuning these pre-trained models, we rank #1 in these classification tasks (detailed in the paper):
-<table><tbody>
-<!-- START TABLE -->
-<!-- TABLE HEADER -->
-<th valign="bottom"></th>
-<th valign="bottom">ViT-B</th>
-<th valign="bottom">ViT-L</th>
-<th valign="bottom">ViT-H</th>
-<th valign="bottom">ViT-H<sub>448</sub></th>
-<td valign="bottom" style="color:#C0C0C0">prev best</td>
-<!-- TABLE BODY -->
-<tr><td align="left">ImageNet-1K (no external data)</td>
-<td align="center">83.6</td>
-<td align="center">85.9</td>
-<td align="center">86.9</td>
-<td align="center"><b>87.8</b></td>
-<td align="center" style="color:#C0C0C0">87.1</td>
-</tr>
-<td colspan="5"><font size="1"><em>following are evaluation of the same model weights (fine-tuned in original ImageNet-1K):</em></font></td>
-<tr>
-</tr>
-<tr><td align="left">ImageNet-Corruption (error rate) </td>
-<td align="center">51.7</td>
-<td align="center">41.8</td>
-<td align="center"><b>33.8</b></td>
-<td align="center">36.8</td>
-<td align="center" style="color:#C0C0C0">42.5</td>
-</tr>
-<tr><td align="left">ImageNet-Adversarial</td>
-<td align="center">35.9</td>
-<td align="center">57.1</td>
-<td align="center">68.2</td>
-<td align="center"><b>76.7</b></td>
-<td align="center" style="color:#C0C0C0">35.8</td>
-</tr>
-<tr><td align="left">ImageNet-Rendition</td>
-<td align="center">48.3</td>
-<td align="center">59.9</td>
-<td align="center">64.4</td>
-<td align="center"><b>66.5</b></td>
-<td align="center" style="color:#C0C0C0">48.7</td>
-</tr>
-<tr><td align="left">ImageNet-Sketch</td>
-<td align="center">34.5</td>
-<td align="center">45.3</td>
-<td align="center">49.6</td>
-<td align="center"><b>50.9</b></td>
-<td align="center" style="color:#C0C0C0">36.0</td>
-</tr>
-<td colspan="5"><font size="1"><em>following are transfer learning by fine-tuning the pre-trained MAE on the target dataset:</em></font></td>
-</tr>
-<tr><td align="left">iNaturalists 2017</td>
-<td align="center">70.5</td>
-<td align="center">75.7</td>
-<td align="center">79.3</td>
-<td align="center"><b>83.4</b></td>
-<td align="center" style="color:#C0C0C0">75.4</td>
-</tr>
-<tr><td align="left">iNaturalists 2018</td>
-<td align="center">75.4</td>
-<td align="center">80.1</td>
-<td align="center">83.0</td>
-<td align="center"><b>86.8</b></td>
-<td align="center" style="color:#C0C0C0">81.2</td>
-</tr>
-<tr><td align="left">iNaturalists 2019</td>
-<td align="center">80.5</td>
-<td align="center">83.4</td>
-<td align="center">85.7</td>
-<td align="center"><b>88.3</b></td>
-<td align="center" style="color:#C0C0C0">84.1</td>
-</tr>
-<tr><td align="left">Places205</td>
-<td align="center">63.9</td>
-<td align="center">65.8</td>
-<td align="center">65.9</td>
-<td align="center"><b>66.8</b></td>
-<td align="center" style="color:#C0C0C0">66.0</td>
-</tr>
-<tr><td align="left">Places365</td>
-<td align="center">57.9</td>
-<td align="center">59.4</td>
-<td align="center">59.8</td>
-<td align="center"><b>60.3</b></td>
-<td align="center" style="color:#C0C0C0">58.0</td>
-</tr>
-</tbody></table>
+### Fine-tuning a Pre-trained ResNet-50 on a Custom Dataset
 
-### Pre-training
+```bash
+python main_train.py \
+  --model_type resnet \
+  --model resnet50 \
+  --pretrained \
+  --batch_size 128 \
+  --epochs 30 \
+  --warmup_epochs 3 \
+  --blr 5e-4 \
+  --weight_decay 1e-5 \
+  --nb_classes 10 \
+  --data_path /path/to/custom_dataset \
+  --output_dir ./output_resnet50_finetune
+```
 
-The pre-training instruction is in [PRETRAIN.md](PRETRAIN.md).
+### Training ViT-Base from Scratch on ImageNet
 
-### License
+```bash
+python -m torch.distributed.launch --nproc_per_node=8 main_train.py \
+  --model_type vit \
+  --model vit_base_patch16 \
+  --batch_size 64 \
+  --epochs 300 \
+  --warmup_epochs 20 \
+  --blr 1e-3 \
+  --weight_decay 0.05 \
+  --mixup 0.8 \
+  --cutmix 1.0 \
+  --data_path /path/to/imagenet \
+  --output_dir ./output_vit_base
+```
 
-This project is under the CC-BY-NC 4.0 license. See [LICENSE](LICENSE) for details.
+### Training ResNet-50 from Scratch on ImageNet
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=8 main_train.py \
+  --model_type resnet \
+  --model resnet50 \
+  --batch_size 256 \
+  --epochs 100 \
+  --warmup_epochs 5 \
+  --blr 1e-3 \
+  --weight_decay 1e-4 \
+  --mixup 0.2 \
+  --cutmix 0.0 \
+  --data_path /path/to/imagenet \
+  --output_dir ./output_resnet50
+```
+
+### Transfer Learning with Pre-trained EfficientNet-B0 on a Small Dataset
+
+```bash
+python main_train.py \
+  --model_type efficientnet \
+  --model efficientnet_b0 \
+  --pretrained \
+  --batch_size 64 \
+  --epochs 20 \
+  --warmup_epochs 2 \
+  --blr 3e-4 \
+  --weight_decay 1e-5 \
+  --nb_classes 5 \
+  --data_path /path/to/small_dataset \
+  --output_dir ./output_efficientnet_b0_transfer
+```
+
+## 📜 License Information
+
+This project is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
+
+### License Requirements:
+- **Attribution**: You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- **NonCommercial**: You may not use the material for commercial purposes.
+- **No additional restrictions**: You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
+
+### Original Project
+This project is modified from [MaskedAutoEncoder](https://github.com/facebookresearch/mae). 

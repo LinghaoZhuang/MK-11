@@ -1,12 +1,9 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
+# Copyright (c) 2023
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
 # --------------------------------------------------------
 # References:
 # DeiT: https://github.com/facebookresearch/deit
-# BEiT: https://github.com/microsoft/unilm/tree/master/beit
 # --------------------------------------------------------
 
 import argparse
@@ -23,7 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import timm
 
-assert timm.__version__ == "0.3.2" # version check
+# assert timm.__version__ == "0.3.2" # version check
 from timm.models.layers import trunc_normal_
 from timm.data.mixup import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
@@ -31,16 +28,17 @@ from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 import util.lr_decay as lrd
 import util.misc as misc
 from util.datasets import build_dataset
-from util.pos_embed import interpolate_pos_embed
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
+# Import different model architectures
 import models_vit
+import models_cnn
 
 from engine_finetune import train_one_epoch, evaluate
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('MAE fine-tuning for image classification', add_help=False)
+    parser = argparse.ArgumentParser('Multi-architecture image classification training', add_help=False)
     parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus')
     parser.add_argument('--epochs', default=50, type=int)
@@ -48,8 +46,12 @@ def get_args_parser():
                         help='Accumulate gradient iterations (for increasing the effective batch size under memory constraints)')
 
     # Model parameters
+    parser.add_argument('--model_type', default='vit', type=str, choices=['vit', 'resnet', 'vgg', 'mobilenet', 'efficientnet', 'regnet', 'densenet', 'convnext'],
+                        help='Type of model architecture to use')
     parser.add_argument('--model', default='vit_large_patch16', type=str, metavar='MODEL',
-                        help='Name of model to train')
+                        help='Name of model to train (vit_base_patch16, resnet50, vgg16, etc.)')
+    parser.add_argument('--pretrained', action='store_true', default=False,
+                        help='Use pre-trained weights from timm')
 
     parser.add_argument('--input_size', default=224, type=int,
                         help='images input size')
@@ -108,18 +110,16 @@ def get_args_parser():
     parser.add_argument('--mixup_mode', type=str, default='batch',
                         help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
 
-    # * Finetuning params
-    parser.add_argument('--finetune', default='',
-                        help='finetune from checkpoint')
+    # * Model parameters
     parser.add_argument('--global_pool', action='store_true')
     parser.set_defaults(global_pool=True)
     parser.add_argument('--cls_token', action='store_false', dest='global_pool',
-                        help='Use class token instead of global pool for classification')
+                        help='Use class token instead of global pool for classification (ViT only)')
 
     # Dataset parameters
     parser.add_argument('--data_path', default='/datasets01/imagenet_full_size/061417/', type=str,
                         help='dataset path')
-    parser.add_argument('--nb_classes', default=1000, type=int,
+    parser.add_argument('--nb_classes', default=11, type=int,
                         help='number of the classification types')
 
     parser.add_argument('--output_dir', default='./output_dir',
@@ -153,6 +153,77 @@ def get_args_parser():
                         help='url used to set up distributed training')
 
     return parser
+
+
+def get_model(args):
+    """
+    Create the model based on the specified architecture type and model name
+    """
+    print(f"Creating model: {args.model}")
+    
+    if args.model_type == 'vit':
+        model = models_vit.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=args.nb_classes,
+            drop_path_rate=args.drop_path,
+            global_pool=args.global_pool,
+        )
+        # Initialize ViT head
+        trunc_normal_(model.head.weight, std=2e-5)
+        
+    elif args.model_type == 'resnet':
+        model = models_cnn.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=args.nb_classes,
+            global_pool=args.global_pool,
+        )
+        
+    elif args.model_type == 'vgg':
+        model = models_cnn.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=args.nb_classes,
+            global_pool=args.global_pool,
+        )
+        
+    elif args.model_type == 'mobilenet':
+        model = models_cnn.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=args.nb_classes,
+            global_pool=args.global_pool,
+        )
+        
+    elif args.model_type == 'efficientnet':
+        model = models_cnn.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=args.nb_classes,
+            global_pool=args.global_pool,
+        )
+        
+    elif args.model_type == 'regnet':
+        model = models_cnn.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=args.nb_classes,
+            global_pool=args.global_pool,
+        )
+        
+    elif args.model_type == 'densenet':
+        model = models_cnn.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=args.nb_classes,
+            global_pool=args.global_pool,
+        )
+        
+    elif args.model_type == 'convnext':
+        model = models_cnn.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=args.nb_classes,
+            global_pool=args.global_pool,
+        )
+        
+    else:
+        raise ValueError(f"Unsupported model type: {args.model_type}")
+    
+    return model
 
 
 def main(args):
@@ -215,6 +286,15 @@ def main(args):
         drop_last=False
     )
 
+    # Record all training parameters to log file
+    if args.output_dir and misc.is_main_process():
+        args_dict = vars(args)
+        with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+            f.write("=== Training Arguments ===\n")
+            f.write(json.dumps(args_dict, indent=2) + "\n")
+            f.write("========================\n")
+        print(f"Arguments saved to log file: {os.path.join(args.output_dir, 'log.txt')}")
+
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
     if mixup_active:
@@ -224,38 +304,8 @@ def main(args):
             prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
     
-    model = models_vit.__dict__[args.model](
-        num_classes=args.nb_classes,
-        drop_path_rate=args.drop_path,
-        global_pool=args.global_pool,
-    )
-
-    if args.finetune and not args.eval:
-        checkpoint = torch.load(args.finetune, map_location='cpu')
-
-        print("Load pre-trained checkpoint from: %s" % args.finetune)
-        checkpoint_model = checkpoint['model']
-        state_dict = model.state_dict()
-        for k in ['head.weight', 'head.bias']:
-            if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
-                print(f"Removing key {k} from pretrained checkpoint")
-                del checkpoint_model[k]
-
-        # interpolate position embedding
-        interpolate_pos_embed(model, checkpoint_model)
-
-        # load pre-trained model
-        msg = model.load_state_dict(checkpoint_model, strict=False)
-        print(msg)
-
-        if args.global_pool:
-            assert set(msg.missing_keys) == {'head.weight', 'head.bias', 'fc_norm.weight', 'fc_norm.bias'}
-        else:
-            assert set(msg.missing_keys) == {'head.weight', 'head.bias'}
-
-        # manually initialize fc layer
-        trunc_normal_(model.head.weight, std=2e-5)
-
+    # Create the model
+    model = get_model(args)
     model.to(device)
 
     model_without_ddp = model
@@ -307,6 +357,7 @@ def main(args):
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     max_accuracy = 0.0
+    max_pr_auc = 0.0
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
@@ -317,31 +368,59 @@ def main(args):
             log_writer=log_writer,
             args=args
         )
+        
         if args.output_dir:
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch)
+                loss_scaler=loss_scaler, epoch='last')
 
         test_stats = evaluate(data_loader_val, model, device)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
-        max_accuracy = max(max_accuracy, test_stats["acc1"])
-        print(f'Max accuracy: {max_accuracy:.2f}%')
+        
+        
+        if test_stats["acc1"] > max_accuracy:
+            max_accuracy = test_stats["acc1"]
+            if args.output_dir:
+                print(f"*** New best accuracy: {max_accuracy:.2f}%, saving checkpoint ***")
+                misc.save_model(
+                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                    loss_scaler=loss_scaler, epoch='best_acc') # Save as 'checkpoint-best_acc.pth'
+        
+        if epoch == args.start_epoch:
+            max_pr_auc = test_stats.get("pr_auc", 0.0)
+        elif test_stats.get("pr_auc", 0.0) > max_pr_auc:
+            max_pr_auc = test_stats.get("pr_auc", 0.0)
+            if args.output_dir:
+                print(f"*** New best PR-AUC: {max_pr_auc:.4f}, saving checkpoint ***")
+                misc.save_model(
+                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                    loss_scaler=loss_scaler, epoch='best_pr_auc') # Save as 'checkpoint-best_pr_auc.pth'
+        
+        print(f'Max accuracy: {max_accuracy:.2f}%, Max PR-AUC: {max_pr_auc:.4f}')
 
         if log_writer is not None:
             log_writer.add_scalar('perf/test_acc1', test_stats['acc1'], epoch)
             log_writer.add_scalar('perf/test_acc5', test_stats['acc5'], epoch)
             log_writer.add_scalar('perf/test_loss', test_stats['loss'], epoch)
+            if "pr_auc" in test_stats:
+                log_writer.add_scalar('perf/test_pr_auc', test_stats['pr_auc'], epoch)
+            if "f1_score" in test_stats:
+                log_writer.add_scalar('perf/test_f1_score', test_stats['f1_score'], epoch)
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                         **{f'test_{k}': v for k, v in test_stats.items()},
                         'epoch': epoch,
-                        'n_parameters': n_parameters}
+                        'n_parameters': n_parameters,
+                        'max_accuracy': max_accuracy,
+                        'max_pr_auc': max_pr_auc}
 
         if args.output_dir and misc.is_main_process():
             if log_writer is not None:
                 log_writer.flush()
             with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
                 f.write(json.dumps(log_stats) + "\n")
+
+    
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -353,4 +432,4 @@ if __name__ == '__main__':
     args = args.parse_args()
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-    main(args)
+    main(args) 

@@ -14,6 +14,8 @@ import sys
 from typing import Iterable, Optional
 
 import torch
+import numpy as np
+from sklearn.metrics import precision_recall_curve, auc, f1_score, precision_score, recall_score, accuracy_score
 
 from timm.data import Mixup
 from timm.utils import accuracy
@@ -104,6 +106,10 @@ def evaluate(data_loader, model, device):
 
     # switch to evaluation mode
     model.eval()
+    
+    all_preds = []
+    all_targets = []
+    all_probs = []
 
     for batch in metric_logger.log_every(data_loader, 10, header):
         images = batch[0]
@@ -118,13 +124,79 @@ def evaluate(data_loader, model, device):
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
+        prob = torch.softmax(output, dim=1)
+        _, pred = torch.max(output, dim=1)
+        
+        all_preds.append(pred.cpu().numpy())
+        all_targets.append(target.cpu().numpy())
+        all_probs.append(prob.cpu().numpy())
+        
         batch_size = images.shape[0]
         metric_logger.update(loss=loss.item())
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-    # gather the stats from all processes
+    
+    all_preds = np.concatenate(all_preds)
+    all_targets = np.concatenate(all_targets)
+    all_probs = np.concatenate(all_probs)
+    
+    f1 = f1_score(all_targets, all_preds, average='weighted')
+    metric_logger.meters['f1_score'] = misc.SmoothedValue(window_size=1, fmt='{value:.3f}')
+    metric_logger.meters['f1_score'].update(f1, n=len(all_targets))
+    
+    num_classes = all_probs.shape[1]
+    pr_auc_list = []
+    
+    for i in range(num_classes):
+        binary_targets = (all_targets == i).astype(int)
+        binary_preds = (all_preds == i).astype(int)
+        
+        class_prefix = f"class_{i}_"
+        
+        if np.sum(binary_targets) > 0:
+            class_acc = accuracy_score(binary_targets, binary_preds)
+            metric_logger.meters[class_prefix + 'accuracy'] = misc.SmoothedValue(window_size=1, fmt='{value:.3f}')
+            metric_logger.meters[class_prefix + 'accuracy'].update(class_acc, n=1)
+            
+            precision = precision_score(binary_targets, binary_preds, zero_division=0)
+            metric_logger.meters[class_prefix + 'precision'] = misc.SmoothedValue(window_size=1, fmt='{value:.3f}')
+            metric_logger.meters[class_prefix + 'precision'].update(precision, n=1)
+            
+            recall = recall_score(binary_targets, binary_preds, zero_division=0)
+            metric_logger.meters[class_prefix + 'recall'] = misc.SmoothedValue(window_size=1, fmt='{value:.3f}')
+            metric_logger.meters[class_prefix + 'recall'].update(recall, n=1)
+            
+            class_f1 = f1_score(binary_targets, binary_preds, zero_division=0)
+            metric_logger.meters[class_prefix + 'f1'] = misc.SmoothedValue(window_size=1, fmt='{value:.3f}')
+            metric_logger.meters[class_prefix + 'f1'].update(class_f1, n=1)
+            
+            precision_curve, recall_curve, _ = precision_recall_curve(binary_targets, all_probs[:, i])
+            class_pr_auc = auc(recall_curve, precision_curve)
+            metric_logger.meters[class_prefix + 'pr_auc'] = misc.SmoothedValue(window_size=1, fmt='{value:.3f}')
+            metric_logger.meters[class_prefix + 'pr_auc'].update(class_pr_auc, n=1)
+            
+            pr_auc_list.append(class_pr_auc)
+        else:
+            print(f"Warning: Class {i} has no samples, skipping metrics calculation")
+    
+    avg_pr_auc = np.mean(pr_auc_list) if pr_auc_list else 0.0
+    metric_logger.meters['pr_auc'] = misc.SmoothedValue(window_size=1, fmt='{value:.3f}')
+    metric_logger.meters['pr_auc'].update(avg_pr_auc, n=1)
+    
     metric_logger.synchronize_between_processes()
-    print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
-          .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
+    
+    print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} F1 {f1.global_avg:.3f} PR-AUC {pr_auc.global_avg:.3f} loss {losses.global_avg:.3f}'
+          .format(top1=metric_logger.acc1, top5=metric_logger.acc5, f1=metric_logger.f1_score, 
+                  pr_auc=metric_logger.pr_auc, losses=metric_logger.loss))
+    
+    print("\nMetrics for each class:")
+    for i in range(num_classes):
+        class_prefix = f"class_{i}_"
+        if class_prefix + 'precision' in metric_logger.meters:
+            print(f"Class {i}: Accuracy={metric_logger.meters[class_prefix + 'accuracy'].global_avg:.3f}, "
+                  f"Precision={metric_logger.meters[class_prefix + 'precision'].global_avg:.3f}, "
+                  f"Recall={metric_logger.meters[class_prefix + 'recall'].global_avg:.3f}, "
+                  f"F1={metric_logger.meters[class_prefix + 'f1'].global_avg:.3f}, "
+                  f"PR-AUC={metric_logger.meters[class_prefix + 'pr_auc'].global_avg:.3f}")
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}

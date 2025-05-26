@@ -53,22 +53,58 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         return outcome
 
 
-def vit_base_patch16(**kwargs):
+def vit_base_patch16(pretrained=False, **kwargs):
     model = VisionTransformer(
         patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    
+    if pretrained:
+        checkpoint = torch.hub.load_state_dict_from_url(
+            url="https://dl.fbaipublicfiles.com/deit/deit_base_patch16_224-b5f2ef4d.pth",
+            map_location="cpu", check_hash=True
+        )
+        # Remove class token and head weights before loading
+        checkpoint_model = checkpoint["model"]
+        state_dict = model.state_dict()
+        for k in ['head.weight', 'head.bias', 'fc_norm.weight', 'fc_norm.bias']:
+            if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
+                print(f"Removing key {k} from pretrained checkpoint")
+                del checkpoint_model[k]
+                
+        model.load_state_dict(checkpoint_model, strict=False)
+        
     return model
 
 
-def vit_large_patch16(**kwargs):
+def vit_large_patch16(pretrained=False, **kwargs):
     model = VisionTransformer(
         patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    
+    if pretrained:
+        checkpoint = torch.hub.load_state_dict_from_url(
+            url="https://dl.fbaipublicfiles.com/deit/deit_base_patch16_384-8de9b5d1.pth",
+            map_location="cpu", check_hash=True
+        )
+        # Remove class token and head weights before loading
+        checkpoint_model = checkpoint["model"]
+        state_dict = model.state_dict()
+        for k in ['head.weight', 'head.bias', 'fc_norm.weight', 'fc_norm.bias']:
+            if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
+                print(f"Removing key {k} from pretrained checkpoint")
+                del checkpoint_model[k]
+                
+        model.load_state_dict(checkpoint_model, strict=False)
+        
     return model
 
 
-def vit_huge_patch14(**kwargs):
+def vit_huge_patch14(pretrained=False, **kwargs):
     model = VisionTransformer(
         patch_size=14, embed_dim=1280, depth=32, num_heads=16, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    
+    if pretrained:
+        print("Warning: No official pretrained weights for ViT-Huge. Ignoring pretrained=True.")
+        
     return model
