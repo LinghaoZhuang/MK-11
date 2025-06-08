@@ -240,7 +240,7 @@ This dataset is licensed under the [Creative Commons Attribution 4.0 Internation
 
 ### Dataset Availability
 The MK-11 dataset is publicly archived on the **Figshare platform** under CC-BY 4.0 license:
-- **DOI**: 10.6084/m9.figshare.xxxxxx (to be updated upon publication)
+- **DOI**: 10.6084/m9.figshare.29264819
 - **Format**: Standard compressed format with ImageNet-style organization
 - **Access**: Open access for research and educational purposes
 
