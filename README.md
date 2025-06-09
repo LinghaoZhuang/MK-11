@@ -13,11 +13,7 @@
 
 ## 🔬 Abstract
 
-Precise classification of megakaryocyte subtypes is not only critical for the diagnosis, stratification, and prognostic assessment of **Myelodysplastic Syndromes (MDS)**, but also significant for research into various platelet-production related disorders; however, high-quality image resources for megakaryocytes with open licensing remain extremely scarce. 
-
-Here we present the **MK-11 dataset**, comprising **7,204 Wright-Giemsa stained single-cell images** covering **11 clinically relevant megakaryocyte subtypes**. The class distribution partially reflects the real-world "long-tail" distribution, making it suitable as a benchmark for classification, severe class imbalance, and few-shot learning tasks.
-
-As the first publicly available megakaryocyte subtype image dataset, MK-11 establishes the foundation for hematopathology and computer-aided diagnosis research in MDS (and related platelet disorders), while also creating opportunities for advanced research topics such as rare subtype detection, transfer learning, and domain adaptation.
+Precise classification of megakaryocyte subtypes in bone marrow examination is crucial for the diagnosis and research of various hematological disorders, including Myelodysplastic Syndromes (MDS) and other platelet-production related diseases. While deep learning (DL) has demonstrated remarkable success in medical image classification, its application to megakaryocyte classification has been hindered by the scarcity of high-quality, openly licensed datasets. Therefore, we present MK-11, a dataset comprising 7,204 Wright-Giemsa stained single-cell images across 11 clinically relevant megakaryocyte subtypes. All images were annotated by two experienced hematopathologists with consensus review to ensure annotation quality, following standardized diagnostic criteria. Several state-of-the-art neural networks, including convolutional and transformer-based models, were evaluated on this benchmark, establishing strong baseline performance for megakaryocyte classification. To ensure reproducibility, we provide standardized five-fold cross-validation partitions along with all original images, annotations, partitioning schemes, and evaluation scripts under open licenses. In conclusion, this work built the first public megakaryocyte subtype classification dataset for automatic morphological assessment development and evaluation, serving as a benchmark for future research.
 
 ## 📋 Table of Contents
 
